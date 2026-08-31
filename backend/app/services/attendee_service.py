@@ -118,10 +118,8 @@ class AttendeeService:
             semester=attendee_in.semester,
         )
         db.add(attendee)
-        db.commit()
-        db.refresh(attendee)
+        db.flush()
 
-        # Initialize attendance record with is_present=False
         attendance = Attendance(
             event_id=event_id,
             attendee_id=attendee.id,

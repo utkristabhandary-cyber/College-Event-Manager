@@ -17,7 +17,10 @@ from app.schemas.import_schemas import (
 # Maximum accepted spreadsheet size (10 MB).
 MAX_FILE_SIZE_BYTES = 10 * 1024 * 1024
 
-ALLOWED_EXTENSIONS = {".xlsx", ".xls"}
+# Maximum rows allowed in a single import.
+MAX_ROW_COUNT = 5000
+
+ALLOWED_EXTENSIONS = {".xlsx"}
 
 # Canonical approved fields -> accepted column aliases.
 # Matching is case-insensitive and ignores whitespace.
@@ -131,7 +134,7 @@ def _parse_excel(file_bytes: bytes) -> tuple:
     except Exception:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Could not read spreadsheet. Ensure it is a valid .xlsx/.xls file.",
+            detail="Could not read spreadsheet. Ensure it is a valid .xlsx file.",
         )
 
     sheet = workbook.active
@@ -149,7 +152,15 @@ def _parse_excel(file_bytes: bytes) -> tuple:
             status_code=status.HTTP_400_BAD_REQUEST, detail="Spreadsheet contains no data"
         )
 
-    data_rows = [[_cell_text(cell) for cell in row] for row in rows]
+    data_rows = []
+    for idx, row in enumerate(rows, start=1):
+        if idx > MAX_ROW_COUNT:
+            workbook.close()
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Spreadsheet exceeds maximum row limit of {MAX_ROW_COUNT} rows.",
+            )
+        data_rows.append([_cell_text(cell) for cell in row])
     workbook.close()
     return list(header), data_rows
 
@@ -163,25 +174,27 @@ class ImportService:
         if not filename.endswith(tuple(ALLOWED_EXTENSIONS)):
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Unsupported file type. Please upload a .xlsx or .xls spreadsheet.",
+                detail="Unsupported file type. Please upload a .xlsx spreadsheet.",
             )
 
-        try:
-            content = file.file.read()
-        except Exception:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Could not read uploaded file.",
-            )
+        chunks = []
+        total_size = 0
+        while True:
+            chunk = file.file.read(8192)
+            if not chunk:
+                break
+            total_size += len(chunk)
+            if total_size > cls.MAX_FILE_SIZE_BYTES:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="File is too large. Maximum size is 10 MB.",
+                )
+            chunks.append(chunk)
 
+        content = b"".join(chunks)
         if not content:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST, detail="File is empty"
-            )
-        if len(content) > cls.MAX_FILE_SIZE_BYTES:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="File is too large. Maximum size is 10 MB.",
             )
         return content
 

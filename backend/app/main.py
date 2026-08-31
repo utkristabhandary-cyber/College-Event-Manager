@@ -19,12 +19,14 @@ async def lifespan(app: FastAPI):
     yield
 
 
+is_dev = settings.ENVIRONMENT == "development"
+
 app = FastAPI(
     title=settings.PROJECT_NAME,
     version=settings.VERSION,
-    openapi_url=f"{settings.API_V1_STR}/openapi.json",
-    docs_url="/docs",
-    redoc_url="/redoc",
+    openapi_url=f"{settings.API_V1_STR}/openapi.json" if is_dev else None,
+    docs_url="/docs" if is_dev else None,
+    redoc_url="/redoc" if is_dev else None,
     lifespan=lifespan,
 )
 
@@ -33,8 +35,8 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.CORS_ORIGINS,
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["GET", "POST", "PUT", "DELETE"],
+    allow_headers=["Content-Type"],
 )
 
 app.include_router(api_router, prefix=settings.API_V1_STR)

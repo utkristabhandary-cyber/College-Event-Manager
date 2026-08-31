@@ -4,9 +4,10 @@ from typing import Annotated, List, Optional
 
 
 class Settings(BaseSettings):
-    PROJECT_NAME: str = "Event Management Dashboard API"
+    PROJECT_NAME: str = "College Event Manager API"
     VERSION: str = "1.0.0"
     API_V1_STR: str = "/api/v1"
+    ENVIRONMENT: str = "development"
     
     # Database
     POSTGRES_SERVER: str = "localhost"

@@ -10,3 +10,5 @@ tests/
 !.env.example
 Dockerfile
 .dockerignore
+.git
+.gitignore
