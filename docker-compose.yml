@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   # PostgreSQL Database Service
   postgres:
@@ -34,13 +32,13 @@ services:
       POSTGRES_DB: ${POSTGRES_DB:-event_db}
       POSTGRES_PORT: 5432
       DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DB:-event_db}
+      # Allow the browser origin serving the Next.js frontend
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:3000}
     ports:
       - "8000:8000"
     depends_on:
       postgres:
         condition: service_healthy
-    volumes:
-      - ./backend:/app
 
   # Next.js Frontend Dashboard Service
   frontend:
@@ -48,11 +46,14 @@ services:
       context: ./frontend
       dockerfile: Dockerfile
       args:
+        # Baked into the client bundle so the browser reaches the backend
         NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:8000/api/v1}
     container_name: event_dashboard_frontend
     restart: unless-stopped
     environment:
+      # Browser-side requests use this public URL
       NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:8000/api/v1}
+      # Server-side / SSR requests inside the Docker network use the service name
       INTERNAL_API_URL: http://backend:8000/api/v1
     ports:
       - "3000:3000"
