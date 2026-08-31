@@ -1,0 +1,6 @@
+{
+  "name": "Event Management Dashboard",
+  "description": "Production-structured event management dashboard with event tracking, attendee management, attendance marking, and statistics.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
