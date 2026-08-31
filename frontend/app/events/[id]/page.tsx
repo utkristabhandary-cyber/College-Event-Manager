@@ -129,11 +129,19 @@ export default function EventDetailPage() {
 
   const handleToggleAttendance = async (attendee: AttendeeItem) => {
     const newStatus = !attendee.is_present;
+    // Optimistically update the UI before the API call completes.
+    setAttendees((prev) =>
+      prev.map((a) => (a.id === attendee.id ? { ...a, is_present: newStatus } : a))
+    );
     try {
       await api.markAttendance(eventId, attendee.id, newStatus);
       showToast('success', `Marked ${attendee.name} as ${newStatus ? 'Present' : 'Absent'}`);
       await loadEventAndAttendees();
     } catch (err: any) {
+      // Roll back the optimistic update on failure.
+      setAttendees((prev) =>
+        prev.map((a) => (a.id === attendee.id ? { ...a, is_present: !newStatus } : a))
+      );
       showToast('error', err.message || 'Failed to update attendance');
     }
   };

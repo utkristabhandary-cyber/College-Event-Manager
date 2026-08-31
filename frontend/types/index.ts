@@ -1,6 +1,6 @@
 export interface EventItem {
   id: number;
-  name: str;
+  name: string;
   description?: string | null;
   date: string;
   start_time: string;
@@ -11,8 +11,6 @@ export interface EventItem {
   absent_count?: number;
   attendance_rate?: number;
 }
-
-export type str = string;
 
 export interface EventCreateInput {
   name: string;
