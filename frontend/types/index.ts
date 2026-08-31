@@ -36,23 +36,57 @@ export interface AttendeeItem {
   event_name?: string | null;
   name: string;
   email: string;
-  phone?: string | null;
-  organization?: string | null;
+  phone_number: string;
+  section: string;
+  semester: string;
   is_present?: boolean | null;
 }
 
 export interface AttendeeCreateInput {
   name: string;
   email: string;
-  phone?: string;
-  organization?: string;
+  phone_number: string;
+  section: string;
+  semester: string;
 }
 
 export interface AttendeeUpdateInput {
   name?: string;
   email?: string;
-  phone?: string;
-  organization?: string;
+  phone_number?: string;
+  section?: string;
+  semester?: string;
+}
+
+export interface ImportRow {
+  row_number: number;
+  name: string;
+  email: string;
+  phone_number: string;
+  section: string;
+  semester: string;
+  errors?: string[] | null;
+}
+
+export interface AttendeeImportPreview {
+  filename: string;
+  detected_columns: string[];
+  ignored_column_count: number;
+  total_rows: number;
+  valid_count: number;
+  invalid_count: number;
+  duplicate_count: number;
+  existing_count: number;
+  missing_columns: string[];
+  rows: ImportRow[];
+}
+
+export interface AttendeeImportResult {
+  processed: number;
+  imported: number;
+  invalid_skipped: number;
+  existing_skipped: number;
+  duplicate_skipped: number;
 }
 
 export interface AttendanceRecord {

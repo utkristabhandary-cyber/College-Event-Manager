@@ -16,13 +16,13 @@ def test_mark_attendance_and_stats(client):
     # 2. Add 2 attendees
     att1_res = client.post(
         f"/api/v1/events/{event_id}/attendees",
-        json={"name": "Attendee One", "email": "one@company.com"},
+        json={"name": "Attendee One", "email": "one@company.com", "phone_number": "9811111111", "section": "A", "semester": "3"},
     )
     att1_id = att1_res.json()["id"]
 
     att2_res = client.post(
         f"/api/v1/events/{event_id}/attendees",
-        json={"name": "Attendee Two", "email": "two@company.com"},
+        json={"name": "Attendee Two", "email": "two@company.com", "phone_number": "9722222222", "section": "B", "semester": "4"},
     )
     att2_id = att2_res.json()["id"]
 

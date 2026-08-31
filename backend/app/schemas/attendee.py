@@ -3,10 +3,11 @@ from pydantic import BaseModel, EmailStr, Field
 
 
 class AttendeeBase(BaseModel):
-    name: str = Field(..., min_length=1, max_length=255, description="Full name of attendee")
+    name: str = Field(..., min_length=1, max_length=255, description="Full name of participant")
     email: EmailStr = Field(..., description="Email address")
-    phone: Optional[str] = Field(None, max_length=50, description="Contact phone number")
-    organization: Optional[str] = Field(None, max_length=255, description="Company or organization")
+    phone_number: str = Field(..., min_length=1, max_length=50, description="Contact phone number")
+    section: str = Field(..., min_length=1, max_length=50, description="Section of the participant")
+    semester: str = Field(..., min_length=1, max_length=50, description="Semester of the participant")
 
 
 class AttendeeCreate(AttendeeBase):
@@ -16,8 +17,9 @@ class AttendeeCreate(AttendeeBase):
 class AttendeeUpdate(BaseModel):
     name: Optional[str] = Field(None, min_length=1, max_length=255)
     email: Optional[EmailStr] = None
-    phone: Optional[str] = Field(None, max_length=50)
-    organization: Optional[str] = Field(None, max_length=255)
+    phone_number: Optional[str] = Field(None, min_length=1, max_length=50)
+    section: Optional[str] = Field(None, min_length=1, max_length=50)
+    semester: Optional[str] = Field(None, min_length=1, max_length=50)
 
 
 class AttendeeResponse(AttendeeBase):

@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
-import { Users, Search, Building, RefreshCw, Plus } from 'lucide-react';
+import { Users, Search, RefreshCw, Plus } from 'lucide-react';
 import { api } from '@/lib/api';
 import { AttendeeItem, AttendeeUpdateInput } from '@/types';
 import { AttendeeTable } from '@/components/attendees/AttendeeTable';
@@ -15,7 +15,8 @@ export default function AllAttendeesPage() {
   const [attendees, setAttendees] = useState<AttendeeItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
-  const [orgFilter, setOrgFilter] = useState('');
+  const [sectionFilter, setSectionFilter] = useState('');
+  const [semesterFilter, setSemesterFilter] = useState('');
 
   // Modals state
   const [isAttendeeModalOpen, setIsAttendeeModalOpen] = useState(false);
@@ -43,7 +44,8 @@ export default function AllAttendeesPage() {
     try {
       const data = await api.getAllAttendees({
         search: searchQuery || undefined,
-        organization: orgFilter || undefined,
+        section: sectionFilter || undefined,
+        semester: semesterFilter || undefined,
       });
       setAttendees(data);
     } catch (err: any) {
@@ -51,7 +53,7 @@ export default function AllAttendeesPage() {
     } finally {
       setIsLoading(false);
     }
-  }, [searchQuery, orgFilter, showToast]);
+  }, [searchQuery, sectionFilter, semesterFilter, showToast]);
 
   useEffect(() => {
     loadAttendees();
@@ -83,8 +85,11 @@ export default function AllAttendeesPage() {
     }
   };
 
-  const uniqueOrgs = Array.from(
-    new Set(attendees.map((a) => a.organization).filter((org): org is string => !!org))
+  const uniqueSections = Array.from(
+    new Set(attendees.map((a) => a.section).filter((s): s is string => !!s))
+  );
+  const uniqueSemesters = Array.from(
+    new Set(attendees.map((a) => a.semester).filter((s): s is string => !!s))
   );
 
   return (
@@ -126,23 +131,40 @@ export default function AllAttendeesPage() {
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search by name, email, company..."
+              placeholder="Search by name, email, phone..."
               className="w-full pl-8 pr-3 py-1.5 bg-slate-50 hover:bg-white focus:bg-white border border-slate-200 rounded-md text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 shadow-2xs transition-colors"
             />
           </div>
 
-          {/* Org Filter */}
-          {uniqueOrgs.length > 0 && (
+          {/* Section Filter */}
+          {uniqueSections.length > 0 && (
             <select
-              id="attendees-dir-org-filter"
-              value={orgFilter}
-              onChange={(e) => setOrgFilter(e.target.value)}
+              id="attendees-dir-section-filter"
+              value={sectionFilter}
+              onChange={(e) => setSectionFilter(e.target.value)}
               className="py-1.5 pl-3 pr-8 bg-slate-50 border border-slate-200 rounded-md text-xs text-slate-700 focus:outline-none focus:ring-1 focus:ring-indigo-500 shadow-2xs"
             >
-              <option value="">All Organizations</option>
-              {uniqueOrgs.map((org) => (
-                <option key={org} value={org}>
-                  {org}
+              <option value="">All Sections</option>
+              {uniqueSections.map((s) => (
+                <option key={s} value={s}>
+                  {s}
+                </option>
+              ))}
+            </select>
+          )}
+
+          {/* Semester Filter */}
+          {uniqueSemesters.length > 0 && (
+            <select
+              id="attendees-dir-semester-filter"
+              value={semesterFilter}
+              onChange={(e) => setSemesterFilter(e.target.value)}
+              className="py-1.5 pl-3 pr-8 bg-slate-50 border border-slate-200 rounded-md text-xs text-slate-700 focus:outline-none focus:ring-1 focus:ring-indigo-500 shadow-2xs"
+            >
+              <option value="">All Semesters</option>
+              {uniqueSemesters.map((s) => (
+                <option key={s} value={s}>
+                  {s}
                 </option>
               ))}
             </select>
@@ -159,7 +181,7 @@ export default function AllAttendeesPage() {
             <Users className="w-10 h-10 text-slate-300 mx-auto mb-3" />
             <h3 className="text-sm font-semibold text-slate-800">No attendees found</h3>
             <p className="text-xs text-slate-500 mt-1 max-w-sm mx-auto">
-              {searchQuery || orgFilter
+              {searchQuery || sectionFilter || semesterFilter
                 ? 'No registered attendees matched your filter parameters.'
                 : 'No attendees have been registered to any event yet.'}
             </p>

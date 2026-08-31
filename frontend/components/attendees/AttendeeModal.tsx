@@ -21,8 +21,9 @@ export const AttendeeModal: React.FC<AttendeeModalProps> = ({
 }) => {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
-  const [phone, setPhone] = useState('');
-  const [organization, setOrganization] = useState('');
+  const [phoneNumber, setPhoneNumber] = useState('');
+  const [section, setSection] = useState('');
+  const [semester, setSemester] = useState('');
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -30,13 +31,15 @@ export const AttendeeModal: React.FC<AttendeeModalProps> = ({
     if (attendeeToEdit) {
       setName(attendeeToEdit.name);
       setEmail(attendeeToEdit.email);
-      setPhone(attendeeToEdit.phone || '');
-      setOrganization(attendeeToEdit.organization || '');
+      setPhoneNumber(attendeeToEdit.phone_number || '');
+      setSection(attendeeToEdit.section || '');
+      setSemester(attendeeToEdit.semester || '');
     } else {
       setName('');
       setEmail('');
-      setPhone('');
-      setOrganization('');
+      setPhoneNumber('');
+      setSection('');
+      setSemester('');
     }
     setErrors({});
   }, [attendeeToEdit, isOpen]);
@@ -51,6 +54,9 @@ export const AttendeeModal: React.FC<AttendeeModalProps> = ({
     } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
       newErrors.email = 'Please enter a valid email address';
     }
+    if (!phoneNumber.trim()) newErrors.phoneNumber = 'Phone number is required';
+    if (!section.trim()) newErrors.section = 'Section is required';
+    if (!semester.trim()) newErrors.semester = 'Semester is required';
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -65,8 +71,9 @@ export const AttendeeModal: React.FC<AttendeeModalProps> = ({
       await onSubmit({
         name: name.trim(),
         email: email.trim().toLowerCase(),
-        phone: phone.trim() ? phone.trim() : undefined,
-        organization: organization.trim() ? organization.trim() : undefined,
+        phone_number: phoneNumber.trim(),
+        section: section.trim(),
+        semester: semester.trim(),
       });
       onClose();
     } catch (err: any) {
@@ -166,34 +173,73 @@ export const AttendeeModal: React.FC<AttendeeModalProps> = ({
               htmlFor="attendee-phone-input"
               className="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1"
             >
-              Phone Number <span className="text-slate-400 text-xs font-normal">(Optional)</span>
+              Phone Number <span className="text-rose-500">*</span>
             </label>
             <input
               id="attendee-phone-input"
               type="tel"
-              value={phone}
-              onChange={(e) => setPhone(e.target.value)}
+              value={phoneNumber}
+              onChange={(e) => setPhoneNumber(e.target.value)}
               placeholder="e.g. +1 (555) 012-3456"
-              className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-md text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 shadow-2xs"
+              className={`w-full px-3.5 py-2 bg-white border rounded-md text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-1 shadow-2xs ${
+                errors.phoneNumber
+                  ? 'border-rose-400 focus:ring-rose-500'
+                  : 'border-slate-200 focus:ring-indigo-500 focus:border-indigo-500'
+              }`}
             />
+            {errors.phoneNumber && (
+              <p className="text-xs text-rose-500 mt-1 font-medium">{errors.phoneNumber}</p>
+            )}
           </div>
 
-          {/* Organization */}
+          {/* Section */}
           <div>
             <label
-              htmlFor="attendee-org-input"
+              htmlFor="attendee-section-input"
               className="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1"
             >
-              Organization / Company <span className="text-slate-400 text-xs font-normal">(Optional)</span>
+              Section <span className="text-rose-500">*</span>
             </label>
             <input
-              id="attendee-org-input"
+              id="attendee-section-input"
               type="text"
-              value={organization}
-              onChange={(e) => setOrganization(e.target.value)}
-              placeholder="e.g. Acme Corp, Research Lab"
-              className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-md text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 shadow-2xs"
+              value={section}
+              onChange={(e) => setSection(e.target.value)}
+              placeholder="e.g. A, B, C"
+              className={`w-full px-3.5 py-2 bg-white border rounded-md text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-1 shadow-2xs ${
+                errors.section
+                  ? 'border-rose-400 focus:ring-rose-500'
+                  : 'border-slate-200 focus:ring-indigo-500 focus:border-indigo-500'
+              }`}
             />
+            {errors.section && (
+              <p className="text-xs text-rose-500 mt-1 font-medium">{errors.section}</p>
+            )}
+          </div>
+
+          {/* Semester */}
+          <div>
+            <label
+              htmlFor="attendee-semester-input"
+              className="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1"
+            >
+              Semester <span className="text-rose-500">*</span>
+            </label>
+            <input
+              id="attendee-semester-input"
+              type="text"
+              value={semester}
+              onChange={(e) => setSemester(e.target.value)}
+              placeholder="e.g. 1, 2, 3"
+              className={`w-full px-3.5 py-2 bg-white border rounded-md text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-1 shadow-2xs ${
+                errors.semester
+                  ? 'border-rose-400 focus:ring-rose-500'
+                  : 'border-slate-200 focus:ring-indigo-500 focus:border-indigo-500'
+              }`}
+            />
+            {errors.semester && (
+              <p className="text-xs text-rose-500 mt-1 font-medium">{errors.semester}</p>
+            )}
           </div>
 
           {/* Form Actions */}

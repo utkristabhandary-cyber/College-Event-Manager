@@ -14,7 +14,7 @@ import {
   Percent,
   Plus,
   Search,
-  Building,
+  Upload,
   Edit3,
   Trash2,
   RefreshCw,
@@ -30,6 +30,7 @@ import {
 import { AttendeeTable } from '@/components/attendees/AttendeeTable';
 import { EventFormModal } from '@/components/events/EventFormModal';
 import { AttendeeModal } from '@/components/attendees/AttendeeModal';
+import { ImportParticipantsModal } from '@/components/attendees/ImportParticipantsModal';
 import { DeleteConfirmModal } from '@/components/ui/DeleteConfirmModal';
 import { Toast, ToastMessage } from '@/components/ui/Toast';
 import { Spinner } from '@/components/ui/Spinner';
@@ -43,12 +44,15 @@ export default function EventDetailPage() {
   const [attendees, setAttendees] = useState<AttendeeItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
-  const [orgFilter, setOrgFilter] = useState('');
+  const [sectionFilter, setSectionFilter] = useState('');
+  const [semesterFilter, setSemesterFilter] = useState('');
 
   // Modals state
   const [isEditEventOpen, setIsEditEventOpen] = useState(false);
   const [isDeleteEventOpen, setIsDeleteEventOpen] = useState(false);
   const [isDeletingEvent, setIsDeletingEvent] = useState(false);
+
+  const [isImportOpen, setIsImportOpen] = useState(false);
 
   const [isAttendeeModalOpen, setIsAttendeeModalOpen] = useState(false);
   const [attendeeToEdit, setAttendeeToEdit] = useState<AttendeeItem | null>(null);
@@ -78,7 +82,8 @@ export default function EventDetailPage() {
         api.getEvent(eventId),
         api.getEventAttendees(eventId, {
           search: searchQuery || undefined,
-          organization: orgFilter || undefined,
+          section: sectionFilter || undefined,
+          semester: semesterFilter || undefined,
         }),
       ]);
       setEvent(eventData);
@@ -88,7 +93,7 @@ export default function EventDetailPage() {
     } finally {
       setIsLoading(false);
     }
-  }, [eventId, searchQuery, orgFilter, showToast]);
+  }, [eventId, searchQuery, sectionFilter, semesterFilter, showToast]);
 
   useEffect(() => {
     loadEventAndAttendees();
@@ -191,9 +196,12 @@ export default function EventDetailPage() {
   const absent = event?.absent_count || 0;
   const rate = event?.attendance_rate || 0;
 
-  // Extract unique organizations for filter dropdown
-  const uniqueOrgs = Array.from(
-    new Set(attendees.map((a) => a.organization).filter((org): org is string => !!org))
+  // Extract unique sections for filter dropdown
+  const uniqueSections = Array.from(
+    new Set(attendees.map((a) => a.section).filter((s): s is string => !!s))
+  );
+  const uniqueSemesters = Array.from(
+    new Set(attendees.map((a) => a.semester).filter((s): s is string => !!s))
   );
 
   return (
@@ -373,7 +381,7 @@ export default function EventDetailPage() {
                 </p>
               </div>
 
-              {/* Search & Organization Filters */}
+              {/* Search & Filters */}
               <div className="flex flex-wrap items-center gap-2.5">
                 <div className="relative">
                   <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
@@ -387,21 +395,46 @@ export default function EventDetailPage() {
                   />
                 </div>
 
-                {uniqueOrgs.length > 0 && (
+                {uniqueSections.length > 0 && (
                   <select
-                    id="attendees-org-filter"
-                    value={orgFilter}
-                    onChange={(e) => setOrgFilter(e.target.value)}
+                    id="attendees-section-filter"
+                    value={sectionFilter}
+                    onChange={(e) => setSectionFilter(e.target.value)}
                     className="py-1.5 pl-3 pr-8 bg-slate-50 border border-slate-200 rounded-md text-xs text-slate-700 focus:outline-none focus:ring-1 focus:ring-indigo-500 shadow-2xs"
                   >
-                    <option value="">All Organizations</option>
-                    {uniqueOrgs.map((org) => (
-                      <option key={org} value={org}>
-                        {org}
+                    <option value="">All Sections</option>
+                    {uniqueSections.map((s) => (
+                      <option key={s} value={s}>
+                        {s}
                       </option>
                     ))}
                   </select>
                 )}
+
+                {uniqueSemesters.length > 0 && (
+                  <select
+                    id="attendees-semester-filter"
+                    value={semesterFilter}
+                    onChange={(e) => setSemesterFilter(e.target.value)}
+                    className="py-1.5 pl-3 pr-8 bg-slate-50 border border-slate-200 rounded-md text-xs text-slate-700 focus:outline-none focus:ring-1 focus:ring-indigo-500 shadow-2xs"
+                  >
+                    <option value="">All Semesters</option>
+                    {uniqueSemesters.map((s) => (
+                      <option key={s} value={s}>
+                        {s}
+                      </option>
+                    ))}
+                  </select>
+                )}
+
+                <button
+                  id="import-participants-btn"
+                  onClick={() => setIsImportOpen(true)}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-md text-xs font-semibold shadow-sm transition-colors"
+                >
+                  <Upload className="w-3.5 h-3.5" />
+                  <span>Import</span>
+                </button>
 
                 <button
                   id="add-attendee-roster-btn"
@@ -423,7 +456,7 @@ export default function EventDetailPage() {
                 <Users className="w-8 h-8 text-slate-300 mx-auto mb-2" />
                 <h3 className="text-xs font-semibold text-slate-800">No attendees found</h3>
                 <p className="text-xs text-slate-500 mt-1">
-                  {searchQuery || orgFilter
+                  {searchQuery || sectionFilter || semesterFilter
                     ? 'No attendees match the current search or filters.'
                     : 'No attendees have been registered for this event yet.'}
                 </p>
@@ -473,6 +506,17 @@ export default function EventDetailPage() {
         onClose={() => setIsAttendeeModalOpen(false)}
         onSubmit={handleCreateOrEditAttendee}
       />
+
+      {/* Import Participants Modal */}
+      {event && (
+        <ImportParticipantsModal
+          isOpen={isImportOpen}
+          eventId={eventId}
+          eventName={event.name}
+          onClose={() => setIsImportOpen(false)}
+          onComplete={loadEventAndAttendees}
+        />
+      )}
 
       {/* Delete Attendee Confirmation Modal */}
       <DeleteConfirmModal

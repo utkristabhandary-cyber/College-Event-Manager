@@ -5,6 +5,8 @@ import {
   AttendeeItem,
   AttendeeCreateInput,
   AttendeeUpdateInput,
+  AttendeeImportPreview,
+  AttendeeImportResult,
   AttendanceRecord,
   DashboardOverview,
 } from '@/types';
@@ -25,6 +27,34 @@ async function fetchJson<T>(endpoint: string, options: RequestInit = {}): Promis
   const response = await fetch(url, {
     ...options,
     headers,
+    cache: 'no-store',
+  });
+
+  if (!response.ok) {
+    let errorDetail = `Request failed with status ${response.status}`;
+    try {
+      const errorJson = await response.json();
+      if (errorJson && errorJson.detail) {
+        errorDetail = typeof errorJson.detail === 'string' ? errorJson.detail : JSON.stringify(errorJson.detail);
+      }
+    } catch {
+      // ignore parse error
+    }
+    throw new Error(errorDetail);
+  }
+
+  if (response.status === 204) {
+    return null as unknown as T;
+  }
+
+  return response.json();
+}
+
+async function fetchFormJson<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
+  const url = `${API_BASE_URL}${endpoint}`;
+
+  const response = await fetch(url, {
+    ...options,
     cache: 'no-store',
   });
 
@@ -84,23 +114,53 @@ export const api = {
   },
 
   // Attendees
-  getAllAttendees: (params?: { search?: string; organization?: string }): Promise<AttendeeItem[]> => {
+  getAllAttendees: (params?: {
+    search?: string;
+    section?: string;
+    semester?: string;
+  }): Promise<AttendeeItem[]> => {
     const searchParams = new URLSearchParams();
     if (params?.search) searchParams.set('search', params.search);
-    if (params?.organization) searchParams.set('organization', params.organization);
+    if (params?.section) searchParams.set('section', params.section);
+    if (params?.semester) searchParams.set('semester', params.semester);
     const queryStr = searchParams.toString() ? `?${searchParams.toString()}` : '';
     return fetchJson<AttendeeItem[]>(`/attendees${queryStr}`);
   },
 
   getEventAttendees: (
     eventId: number,
-    params?: { search?: string; organization?: string }
+    params?: { search?: string; section?: string; semester?: string }
   ): Promise<AttendeeItem[]> => {
     const searchParams = new URLSearchParams();
     if (params?.search) searchParams.set('search', params.search);
-    if (params?.organization) searchParams.set('organization', params.organization);
+    if (params?.section) searchParams.set('section', params.section);
+    if (params?.semester) searchParams.set('semester', params.semester);
     const queryStr = searchParams.toString() ? `?${searchParams.toString()}` : '';
     return fetchJson<AttendeeItem[]>(`/events/${eventId}/attendees${queryStr}`);
+  },
+
+  importAttendeesPreview: (
+    eventId: number,
+    file: File
+  ): Promise<AttendeeImportPreview> => {
+    const formData = new FormData();
+    formData.append('file', file);
+    return fetchJson<AttendeeImportPreview>(`/events/${eventId}/attendees/import/preview`, {
+      method: 'POST',
+      body: formData,
+    });
+  },
+
+  importAttendeesConfirm: (
+    eventId: number,
+    file: File
+  ): Promise<AttendeeImportResult> => {
+    const formData = new FormData();
+    formData.append('file', file);
+    return fetchFormJson<AttendeeImportResult>(`/events/${eventId}/attendees/import`, {
+      method: 'POST',
+      body: formData,
+    });
   },
 
   createAttendee: (eventId: number, data: AttendeeCreateInput): Promise<AttendeeItem> => {

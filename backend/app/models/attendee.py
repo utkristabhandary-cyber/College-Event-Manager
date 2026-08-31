@@ -10,8 +10,9 @@ class Attendee(Base):
     event_id = Column(Integer, ForeignKey("events.id", ondelete="CASCADE"), nullable=False, index=True)
     name = Column(String(255), nullable=False, index=True)
     email = Column(String(255), nullable=False, index=True)
-    phone = Column(String(50), nullable=True)
-    organization = Column(String(255), nullable=True)
+    phone_number = Column(String(50), nullable=False)
+    section = Column(String(50), nullable=False, index=True)
+    semester = Column(String(50), nullable=False, index=True)
 
     # Relationships
     event = relationship("Event", back_populates="attendees")

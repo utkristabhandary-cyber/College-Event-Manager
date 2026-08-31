@@ -37,7 +37,10 @@ export const AttendeeTable: React.FC<AttendeeTableProps> = ({
               Contact
             </th>
             <th scope="col" className="px-6 py-3">
-              Organization
+              Section
+            </th>
+            <th scope="col" className="px-6 py-3">
+              Semester
             </th>
             <th scope="col" className="px-6 py-3 text-center">
               Attendance Status
@@ -89,22 +92,31 @@ export const AttendeeTable: React.FC<AttendeeTableProps> = ({
                     <Mail className="w-3 h-3 text-slate-400" />
                     <span>{attendee.email}</span>
                   </div>
-                  {attendee.phone && (
+                  {attendee.phone_number && (
                     <div className="flex items-center gap-1.5 text-slate-500">
                       <Phone className="w-3 h-3 text-slate-400" />
-                      <span>{attendee.phone}</span>
+                      <span>{attendee.phone_number}</span>
                     </div>
                   )}
                 </div>
               </td>
 
-              {/* Organization */}
+              {/* Section */}
               <td className="px-6 py-4">
-                {attendee.organization ? (
+                {attendee.section ? (
                   <span className="inline-flex items-center gap-1.5 text-slate-600 font-medium">
                     <Building className="w-3 h-3 text-slate-400" />
-                    <span>{attendee.organization}</span>
+                    <span>{attendee.section}</span>
                   </span>
+                ) : (
+                  <span className="text-slate-400 italic">None</span>
+                )}
+              </td>
+
+              {/* Semester */}
+              <td className="px-6 py-4">
+                {attendee.semester ? (
+                  <span className="text-slate-600 font-medium">{attendee.semester}</span>
                 ) : (
                   <span className="text-slate-400 italic">None</span>
                 )}

@@ -19,35 +19,54 @@ class AttendeeService:
             event_name=event_name,
             name=attendee.name,
             email=attendee.email,
-            phone=attendee.phone,
-            organization=attendee.organization,
+            phone_number=attendee.phone_number,
+            section=attendee.section,
+            semester=attendee.semester,
             is_present=is_present,
         )
 
     @classmethod
-    def get_all(
+    def _apply_filters(
         cls,
-        db: Session,
+        query,
         search: Optional[str] = None,
-        organization: Optional[str] = None,
-        skip: int = 0,
-        limit: int = 100,
-    ) -> List[AttendeeResponse]:
-        query = db.query(Attendee)
-        
+        section: Optional[str] = None,
+        semester: Optional[str] = None,
+    ):
         if search:
             search_pattern = f"%{search.strip()}%"
             query = query.filter(
                 or_(
                     Attendee.name.ilike(search_pattern),
                     Attendee.email.ilike(search_pattern),
-                    Attendee.organization.ilike(search_pattern),
+                    Attendee.phone_number.ilike(search_pattern),
                 )
             )
 
-        if organization:
-            query = query.filter(Attendee.organization.ilike(f"%{organization.strip()}%"))
+        if section:
+            query = query.filter(Attendee.section.ilike(f"%{section.strip()}%"))
 
+        if semester:
+            query = query.filter(Attendee.semester == semester.strip())
+
+        return query
+
+    @classmethod
+    def get_all(
+        cls,
+        db: Session,
+        search: Optional[str] = None,
+        section: Optional[str] = None,
+        semester: Optional[str] = None,
+        skip: int = 0,
+        limit: int = 100,
+    ) -> List[AttendeeResponse]:
+        query = cls._apply_filters(
+            db.query(Attendee),
+            search=search,
+            section=section,
+            semester=semester,
+        )
         attendees = query.order_by(Attendee.name.asc()).offset(skip).limit(limit).all()
         return [cls._to_response(a) for a in attendees]
 
@@ -57,25 +76,18 @@ class AttendeeService:
         db: Session,
         event_id: int,
         search: Optional[str] = None,
-        organization: Optional[str] = None,
+        section: Optional[str] = None,
+        semester: Optional[str] = None,
         skip: int = 0,
         limit: int = 100,
     ) -> List[AttendeeResponse]:
         query = db.query(Attendee).filter(Attendee.event_id == event_id)
-        
-        if search:
-            search_pattern = f"%{search.strip()}%"
-            query = query.filter(
-                or_(
-                    Attendee.name.ilike(search_pattern),
-                    Attendee.email.ilike(search_pattern),
-                    Attendee.organization.ilike(search_pattern),
-                )
-            )
-
-        if organization:
-            query = query.filter(Attendee.organization.ilike(f"%{organization.strip()}%"))
-
+        query = cls._apply_filters(
+            query,
+            search=search,
+            section=section,
+            semester=semester,
+        )
         attendees = query.order_by(Attendee.name.asc()).offset(skip).limit(limit).all()
         return [cls._to_response(a) for a in attendees]
 
@@ -101,8 +113,9 @@ class AttendeeService:
             event_id=event_id,
             name=attendee_in.name,
             email=attendee_in.email,
-            phone=attendee_in.phone,
-            organization=attendee_in.organization,
+            phone_number=attendee_in.phone_number,
+            section=attendee_in.section,
+            semester=attendee_in.semester,
         )
         db.add(attendee)
         db.commit()

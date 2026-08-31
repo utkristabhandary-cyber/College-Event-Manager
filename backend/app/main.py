@@ -5,12 +5,16 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.core.config import settings
 from app.api.v1.api import api_router
 from app.db.session import engine, Base
+from app.db.migrations import run_schema_migration
 import app.models  # noqa: F401
 
 
-# Auto-create tables on startup (suitable for development and simple setup)
+# On startup, first apply the safe data-preserving schema migration (if the DB
+# already exists), then auto-create any missing tables. This is suitable for
+# development and simple setup without a full Alembic migration pipeline.
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    run_schema_migration(engine)
     Base.metadata.create_all(bind=engine)
     yield
 
