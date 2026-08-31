@@ -1,3 +1,5 @@
+import contextlib
+
 import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
@@ -29,6 +31,13 @@ def db_session():
         Base.metadata.drop_all(bind=engine)
 
 
+@contextlib.asynccontextmanager
+async def test_lifespan(app):
+    # Create tables against the isolated SQLite engine used by the tests.
+    Base.metadata.create_all(bind=engine)
+    yield
+
+
 @pytest.fixture(scope="function")
 def client(db_session):
     def override_get_db():
@@ -38,6 +47,14 @@ def client(db_session):
             pass
 
     app.dependency_overrides[get_db] = override_get_db
-    with TestClient(app) as test_client:
-        yield test_client
-    app.dependency_overrides.clear()
+
+    # Replace the production lifespan (which binds to PostgreSQL) so the
+    # TestClient does not require a running Postgres server.
+    original_lifespan = app.router.lifespan_context
+    app.router.lifespan_context = test_lifespan
+    try:
+        with TestClient(app) as test_client:
+            yield test_client
+    finally:
+        app.router.lifespan_context = original_lifespan
+        app.dependency_overrides.clear()

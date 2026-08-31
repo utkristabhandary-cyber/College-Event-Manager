@@ -46,7 +46,10 @@ def update_event(
     db: Session = Depends(get_db)
 ):
     """Update fields of an existing event."""
-    updated = EventService.update(db=db, event_id=event_id, event_in=event_in)
+    try:
+        updated = EventService.update(db=db, event_id=event_id, event_in=event_in)
+    except ValueError as exc:
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(exc))
     if not updated:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Event not found")
     return updated

@@ -97,3 +97,44 @@ def test_delete_event(client):
 
     get_res = client.get(f"/api/v1/events/{event_id}")
     assert get_res.status_code == 404
+
+
+def test_update_event_time_order_validation(client):
+    create_res = client.post(
+        "/api/v1/events",
+        json={
+            "name": "Time Order Event",
+            "date": "2026-05-05",
+            "start_time": "09:00:00",
+            "end_time": "10:00:00",
+            "location": "Room A",
+        },
+    )
+    assert create_res.status_code == 201
+    event_id = create_res.json()["id"]
+
+    # Both times supplied, end > start -> valid
+    ok = client.put(
+        f"/api/v1/events/{event_id}",
+        json={"start_time": "11:00:00", "end_time": "12:00:00"},
+    )
+    assert ok.status_code == 200
+
+    # Both times supplied, end <= start -> 422
+    bad = client.put(
+        f"/api/v1/events/{event_id}",
+        json={"start_time": "11:00:00", "end_time": "10:00:00"},
+    )
+    assert bad.status_code == 422
+
+    # Partial end-only update keeping merged validity -> allowed
+    partial_end_ok = client.put(f"/api/v1/events/{event_id}", json={"end_time": "14:00:00"})
+    assert partial_end_ok.status_code == 200
+
+    # Partial start-only update breaking merged validity (15:00 >= 14:00) -> 422
+    partial_start_bad = client.put(f"/api/v1/events/{event_id}", json={"start_time": "15:00:00"})
+    assert partial_start_bad.status_code == 422
+
+    # Partial start-only update keeping merged validity -> allowed
+    partial_start_ok = client.put(f"/api/v1/events/{event_id}", json={"start_time": "08:00:00"})
+    assert partial_start_ok.status_code == 200

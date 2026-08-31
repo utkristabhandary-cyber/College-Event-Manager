@@ -70,7 +70,11 @@ class EventService:
         update_data = event_in.model_dump(exclude_unset=True)
         for field, value in update_data.items():
             setattr(event, field, value)
-        
+
+        # Validate the merged state: even partial updates must keep end_time after start_time.
+        if event.end_time <= event.start_time:
+            raise ValueError("end_time must be after start_time")
+
         db.commit()
         db.refresh(event)
         return cls.get_event_with_stats(db, event)

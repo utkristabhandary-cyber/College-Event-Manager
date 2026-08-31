@@ -1,5 +1,6 @@
-from pydantic_settings import BaseSettings
-from typing import Optional
+from pydantic_settings import BaseSettings, NoDecode
+from pydantic import field_validator
+from typing import Annotated, List, Optional
 
 
 class Settings(BaseSettings):
@@ -14,6 +15,15 @@ class Settings(BaseSettings):
     POSTGRES_DB: str = "event_db"
     POSTGRES_PORT: str = "5432"
     DATABASE_URL: Optional[str] = None
+
+    # CORS (comma-separated list of allowed origins)
+    CORS_ORIGINS: Annotated[List[str], NoDecode] = ["http://localhost:3000"]
+
+    @field_validator("CORS_ORIGINS", mode="before")
+    def parse_cors_origins(cls, v):
+        if isinstance(v, str):
+            return [origin.strip() for origin in v.split(",") if origin.strip()]
+        return v
 
     @property
     def sync_database_url(self) -> str:
